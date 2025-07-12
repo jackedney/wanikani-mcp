@@ -52,9 +52,15 @@ class Subject(SQLModel, table=True):
     slug: str = Field(index=True)
     characters: Optional[str] = None
     meanings: List[Dict[str, Any]] = Field(sa_column=Column(JSON))
-    readings: Optional[List[Dict[str, Any]]] = Field(default=None, sa_column=Column(JSON))
-    component_subject_ids: Optional[List[int]] = Field(default=None, sa_column=Column(JSON))
-    amalgamation_subject_ids: Optional[List[int]] = Field(default=None, sa_column=Column(JSON))
+    readings: Optional[List[Dict[str, Any]]] = Field(
+        default=None, sa_column=Column(JSON)
+    )
+    component_subject_ids: Optional[List[int]] = Field(
+        default=None, sa_column=Column(JSON)
+    )
+    amalgamation_subject_ids: Optional[List[int]] = Field(
+        default=None, sa_column=Column(JSON)
+    )
     document_url: str
     hidden_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
