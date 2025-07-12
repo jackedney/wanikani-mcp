@@ -1,73 +1,53 @@
 # WaniKani MCP Server
 
-This is a WaniKani MCP (Model Context Protocol) server that provides WaniKani data and functionality to AI assistants. It implements the MCP specification using JSON-RPC over HTTP, allowing AI assistants to access user progress, trigger data synchronization, and get learning assistance through defined tools and resources.
+## Empowering AI Assistants with WaniKani Data
 
-## Features
+The WaniKani MCP (Model Context Protocol) Server acts as a bridge, providing AI assistants with seamless access to WaniKani user data and functionality. By implementing the MCP specification over JSON-RPC via HTTP, this server enables AI assistants to retrieve user progress, trigger data synchronization, and offer personalized learning assistance.
 
-The WaniKani MCP server exposes the following core features programmatically through its API:
+## Key Features
 
-*   **Automated Data Synchronization**: Background workers periodically sync with the WaniKani v2 API to keep user data fresh.
-*   **Progress and Status Analysis**: Provides real-time data about user progress, current level, and upcoming lessons/reviews.
-*   **Leech Identification Algorithm**: Analyzes review history to identify consistently problematic items for targeted learning assistance.
-*   **Multi-User Support**: Secure API key-based authentication allows multiple users to access their personal WaniKani data through the same MCP server instance.
+This server exposes powerful capabilities designed to enhance the WaniKani learning experience through AI:
 
-### Core MCP Tools:
+*   **Automated Data Synchronization**: Keeps user data fresh and up-to-date by periodically syncing with the official WaniKani v2 API.
+*   **Real-time Progress & Status**: Provides AI assistants with instant access to a user's current WaniKani level, available lessons, upcoming reviews, and next review times.
+*   **Intelligent Leech Identification**: Utilizes an advanced algorithm to analyze review history and pinpoint consistently problematic items ("leeches"), enabling targeted learning strategies.
+*   **Multi-User Support**: Securely manages data for multiple users through API key-based authentication, ensuring personalized and private access.
 
-*   **`get_status`**: Get a real-time snapshot of the user's current WaniKani status (current level, lessons available, upcoming review count, and next review time).
-*   **`get_leeches`**: Identify items the user struggles with most ("leeches") with parameters for `threshold` and `limit`.
-*   **`sync_data`**: Manually trigger synchronization with WaniKani servers, returning sync status and timestamp.
+### Core MCP Tools for AI Assistants:
 
-### MCP Resources:
+AI assistants can leverage the following tools to interact with the WaniKani data:
 
-*   **`user_progress`**: Current user progress and statistics.
-*   **`review_forecast`**: Timeline of upcoming reviews.
-*   **`item_database`**: Searchable collection of user's WaniKani items.
+*   **`get_status`**: Obtain a snapshot of the user's current WaniKani learning status.
+*   **`get_leeches`**: Identify and retrieve a list of the user's most challenging items.
+*   **`sync_data`**: Manually initiate a data synchronization with WaniKani servers.
 
-## Development Stack
+### Available MCP Resources:
 
-*   **Language**: Python with type hints
-*   **Linter/Formatter**: Ruff
-*   **Typing**: Built-in Python type hints
-*   **MCP Framework**: Python MCP SDK
-*   **Web Framework**: FastAPI (for HTTP transport)
+Beyond direct tools, the server also exposes structured data resources:
+
+*   **`user_progress`**: Comprehensive statistics and progress details for a user.
+*   **`review_forecast`**: A timeline of upcoming reviews.
+*   **`item_database`**: A searchable collection of all WaniKani items relevant to the user.
+
+## Technology Stack
+
+Built with modern and robust technologies to ensure performance and scalability:
+
+*   **Backend**: Python with FastAPI
 *   **Database**: PostgreSQL with SQLModel ORM
-*   **Migration Tool**: Alembic
-*   **Background Jobs**: APScheduler + FastAPI BackgroundTasks
-*   **Package Manager**: uv
-*   **Task Runner**: Taskfile
-*   **Testing**: pytest
+*   **Background Tasks**: APScheduler
 *   **Containerization**: Podman
-*   **CI/CD**: GitHub Actions
 *   **Deployment**: Render
-*   **Configuration**: pydantic-settings
-*   **WaniKani API Client**: httpx
 
-## Common Development Commands
+## Getting Started (For Developers)
 
-All Python functionality should be run via `uv run python` to ensure the correct environment.
+To set up the project locally, ensure you have `uv` installed, then:
 
-*   **Install dependencies**: `uv install`
-*   **Run linter/formatter**: `uv run ruff check .` and `uv run ruff format .`
-*   **Run type checker**: `uvx ty check .`
-*   **Run tests**: `uv run pytest`
-*   **Run development server**: `task dev` (when implemented)
-*   **Build for deployment**: `task build` (when implemented)
-*   **Run database migrations**: `uv run alembic upgrade head` (when implemented)
+1.  **Install dependencies**: `uv install`
+2.  **Run tests**: `uv run pytest`
 
-## Code Style Guidelines
+For more detailed development information, please refer to the project's internal documentation.
 
-*   Use `snake_case` for tool names, parameters, and Python code.
-*   Type hints are required; docstrings are not recommended.
-*   Focus on clarity over cleverness.
-*   Follow TDD with relevant tests (aim for 70% coverage).
-*   Authentication via Bearer Token with MCP API keys.
-*   MCP-compliant error responses with proper error codes.
-*   All tools must be properly registered with clear documentation.
-*   Consistent JSON structure for all tool responses.
-*   Input validation using Pydantic models for tool parameters.
-*   Good naming, logic patterns > lots of comments.
+## Contribution
 
-## Deployment & Testing
-
-*   **Deployment**: The application is containerized with Podman and deployed to Render using GitHub Actions for CI/CD.
-*   **Testing**: `pytest` is used for unit and integration tests, aiming for 70% test coverage.
+We welcome contributions! Please refer to our contribution guidelines (link to be added) for more information.
