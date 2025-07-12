@@ -32,7 +32,7 @@ async def list_tools() -> list[types.Tool]:
     return [
         types.Tool(
             name="register_user",
-            description="Register a new user with their WaniKani API key to get an MCP API key",
+            description="Register a new user with their WaniKani API key to get MCP key",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -46,7 +46,7 @@ async def list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="get_status",
-            description="Get current WaniKani status including lessons, reviews, and level",
+            description="Get current WaniKani status including lessons, reviews, level",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -200,7 +200,8 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextCont
                     return [
                         types.TextContent(
                             type="text",
-                            text=f"User already registered. Your MCP API key is: {existing_user.mcp_api_key}",
+                            text=f"User already registered. Your MCP API key is: "
+                            f"{existing_user.mcp_api_key}",
                         )
                     ]
 
@@ -211,7 +212,8 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextCont
                 return [
                     types.TextContent(
                         type="text",
-                        text=f"Registration successful! Your MCP API key is: {mcp_api_key}\n\nSave this key securely - you'll need it for all other operations.",
+                        text=f"Registration successful! Your MCP API key is: {mcp_api_key}\n\n"
+                        f"Save this key securely - you'll need it for all operations.",
                     )
                 ]
 
