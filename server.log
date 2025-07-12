@@ -1,6 +1,0 @@
-WARNING:  ASGI app factory detected. Using it, but please consider setting the --factory flag explicitly.
-INFO:     Started server process [96811]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     127.0.0.1:49233 - "POST /message HTTP/1.1" 404 Not Found
