@@ -1,11 +1,9 @@
 import asyncio
 import logging
-import signal
 import sys
-import os
 from typing import Optional
 
-from .http_server import create_app
+# from .http_server import create_app
 from .mcp_server import main as run_mcp_stdio
 from .sync_service import sync_service
 from .database import create_tables
@@ -64,32 +62,8 @@ class ServerManager:
         self, host: Optional[str] = None, port: Optional[int] = None
     ):
         """Run the HTTP MCP server"""
-        import uvicorn
-
-        # Use config defaults if not provided
-        host = host or settings.host
-        port = port or int(os.getenv("PORT", settings.port))
-
-        logger.info(f"Starting HTTP MCP server on {host}:{port}")
-        await self.start_sync_service()
-
-        try:
-            # Set up signal handlers
-            signal.signal(signal.SIGINT, self.signal_handler)
-            signal.signal(signal.SIGTERM, self.signal_handler)
-
-            config = uvicorn.Config(
-                create_app(), host=host, port=port, log_level=settings.log_level.lower()
-            )
-            server = uvicorn.Server(config)
-
-            # Run server until shutdown signal
-            await server.serve()
-
-        except Exception as e:
-            logger.error(f"HTTP server error: {e}")
-        finally:
-            await self.stop_sync_service()
+        logger.error("HTTP server mode not available - http_server.py was removed")
+        raise NotImplementedError("HTTP server mode is not implemented")
 
     async def run_stdio_server(self):
         """Run the stdio MCP server"""
@@ -119,7 +93,8 @@ async def run_server(
         raise ValueError(f"Unknown server mode: {mode}")
 
 
-if __name__ == "__main__":
+def main():
+    """Main entry point for the server"""
     # Setup logging first
     setup_logging()
 
@@ -129,28 +104,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="WaniKani MCP Server")
     parser.add_argument(
         "--mode",
-        choices=["http", "stdio"],
+        choices=["stdio"],
         default="stdio",
-        help="Server mode (default: stdio)",
-    )
-    parser.add_argument(
-        "--host",
-        default=settings.host,
-        help=f"HTTP server host (default: {settings.host})",
-    )
-    parser.add_argument(
-        "--port",
-        type=int,
-        default=settings.port,
-        help=f"HTTP server port (default: {settings.port})",
+        help="Server mode (only stdio supported)",
     )
 
     args = parser.parse_args()
 
     try:
-        asyncio.run(run_server(args.mode, args.host, args.port))
+        asyncio.run(run_server(args.mode))
     except KeyboardInterrupt:
         logger.info("Server stopped by user")
     except Exception as e:
         logger.error(f"Server failed: {e}")
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

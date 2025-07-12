@@ -9,7 +9,7 @@ class RateLimiter:
     def __init__(self, max_requests: int, period: float = 60.0):
         self.max_requests = max_requests
         self.period = period
-        self.requests = []
+        self.requests: list[float] = []
         self._lock = asyncio.Lock()
 
     async def acquire(self):
@@ -24,8 +24,15 @@ class RateLimiter:
                 # Calculate how long to wait
                 oldest_request = min(self.requests)
                 wait_time = self.period - (now - oldest_request)
-                await asyncio.sleep(wait_time)
-                return await self.acquire()
+                if wait_time > 0:
+                    await asyncio.sleep(wait_time)
+                # After waiting, clean up old requests again and proceed
+                now = asyncio.get_event_loop().time()
+                self.requests = [
+                    req_time
+                    for req_time in self.requests
+                    if now - req_time < self.period
+                ]
 
             self.requests.append(now)
 
@@ -65,7 +72,7 @@ class WaniKaniClient:
     async def get_subjects(
         self, updated_after: Optional[datetime] = None
     ) -> List[Dict[str, Any]]:
-        params = {}
+        params: Optional[Dict[str, str]] = {}
         if updated_after:
             params["updated_after"] = updated_after.isoformat()
 
@@ -78,14 +85,14 @@ class WaniKaniClient:
             url = data["pages"]["next_url"]
             if url:
                 url = url.replace(self.base_url + "/", "")
-                params = None  # URL already has params
+                params = None
 
         return all_subjects
 
     async def get_assignments(
         self, updated_after: Optional[datetime] = None
     ) -> List[Dict[str, Any]]:
-        params = {}
+        params: Optional[Dict[str, str]] = {}
         if updated_after:
             params["updated_after"] = updated_after.isoformat()
 
@@ -105,7 +112,7 @@ class WaniKaniClient:
     async def get_reviews(
         self, updated_after: Optional[datetime] = None
     ) -> List[Dict[str, Any]]:
-        params = {}
+        params: Optional[Dict[str, str]] = {}
         if updated_after:
             params["updated_after"] = updated_after.isoformat()
 
@@ -125,7 +132,7 @@ class WaniKaniClient:
     async def get_review_statistics(
         self, updated_after: Optional[datetime] = None
     ) -> List[Dict[str, Any]]:
-        params = {}
+        params: Optional[Dict[str, str]] = {}
         if updated_after:
             params["updated_after"] = updated_after.isoformat()
 
@@ -141,3 +148,7 @@ class WaniKaniClient:
                 params = None
 
         return all_stats
+
+    async def get_summary(self) -> Dict[str, Any]:
+        """Get summary with current lesson and review counts"""
+        return await self._get("summary")

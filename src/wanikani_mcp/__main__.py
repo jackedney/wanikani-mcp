@@ -1,10 +1,4 @@
-from .http_server import mcp
-
-
-def main():
-    # Use FastMCP's built-in run method instead of uvicorn directly
-    mcp.run(transport="sse")
-
+from .server import main
 
 if __name__ == "__main__":
     main()

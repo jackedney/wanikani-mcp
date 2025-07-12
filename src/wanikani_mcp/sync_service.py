@@ -148,15 +148,37 @@ class SyncService:
                     session.commit()
                     records_updated += 1
 
-            # Skip subjects sync for now - too much data, focus on assignments
-            # subjects_data = await client.get_subjects(updated_after=last_sync)
-            # for subject_data in subjects_data:
-            #     if "data" in subject_data:
-            #         await self._upsert_subject(subject_data["data"])
-            #         records_updated += 1
-            #     else:
-            #         await self._upsert_subject(subject_data)
-            #         records_updated += 1
+            # Sync subjects (radicals, kanji, vocabulary)
+            try:
+                subjects_data = await client.get_subjects(updated_after=last_sync)
+                logger.info(
+                    f"Syncing {len(subjects_data)} subjects for user {user.username}"
+                )
+
+                for i, subject_item in enumerate(subjects_data):
+                    try:
+                        # Handle the nested structure: top-level has id, data has the actual subject info
+                        subject_id = subject_item.get("id")
+                        subject_data = subject_item.get("data", subject_item)
+
+                        # Add the ID to the data for processing
+                        if subject_id:
+                            subject_data["id"] = subject_id
+                            await self._upsert_subject(subject_data)
+                            records_updated += 1
+
+                            # Log progress for large syncs
+                            if (i + 1) % 1000 == 0:
+                                logger.info(
+                                    f"Synced {i + 1}/{len(subjects_data)} subjects"
+                                )
+                    except Exception as e:
+                        logger.error(f"Error syncing subject {subject_id}: {e}")
+                        continue
+
+            except Exception as e:
+                logger.error(f"Error getting subjects: {e}")
+                # Continue with assignments sync even if subjects fail
 
             # Sync assignments
             try:
@@ -174,7 +196,8 @@ class SyncService:
                         # Add the ID to the data for processing
                         if assignment_id:
                             assignment_data["id"] = assignment_id
-                            await self._upsert_assignment(user.id, assignment_data)
+                            if user.id is not None:
+                                await self._upsert_assignment(user.id, assignment_data)
                             records_updated += 1
 
                             # Log progress for large syncs
@@ -208,7 +231,8 @@ class SyncService:
                         # Add the ID to the data for processing
                         if stats_id:
                             stats_data["id"] = stats_id
-                            await self._upsert_review_statistic(user.id, stats_data)
+                            if user.id is not None:
+                                await self._upsert_review_statistic(user.id, stats_data)
                             records_updated += 1
 
                             # Log progress for large syncs

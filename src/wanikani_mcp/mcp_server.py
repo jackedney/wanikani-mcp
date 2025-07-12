@@ -218,56 +218,44 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextCont
             mcp_api_key = arguments["mcp_api_key"]
             user = await _get_user_from_mcp_key(mcp_api_key)
 
-            engine = get_engine()
-            with Session(engine) as session:
-                now = datetime.now(timezone.utc)
+            # Use WaniKani summary endpoint for accurate counts
+            client = WaniKaniClient(user.wanikani_api_key)
+            try:
+                summary_data = await client.get_summary()
+                summary = summary_data.get("data", {})
 
-                # Count available lessons (srs_stage = 0, available now or no available_at)
-                lessons_count = session.exec(
-                    select(Assignment).where(
-                        Assignment.user_id == user.id,
-                        Assignment.srs_stage == 0,
-                        not Assignment.hidden,
-                        (Assignment.available_at <= now)
-                        | Assignment.available_at.is_(None),
-                    )
-                ).all()
+                # Count current lessons (items available now)
+                lessons = summary.get("lessons", [])
+                lessons_count = 0
+                if lessons:
+                    # Get the first lesson batch (current time)
+                    current_lessons = lessons[0] if lessons else {}
+                    lessons_count = len(current_lessons.get("subject_ids", []))
 
-                # Count available reviews (srs_stage > 0, available now or no available_at)
-                reviews_count = session.exec(
-                    select(Assignment).where(
-                        Assignment.user_id == user.id,
-                        Assignment.srs_stage > 0,
-                        not Assignment.hidden,
-                        (Assignment.available_at <= now)
-                        | Assignment.available_at.is_(None),
-                    )
-                ).all()
+                # Count current reviews (items available now)
+                reviews = summary.get("reviews", [])
+                reviews_count = 0
+                if reviews:
+                    # Get the first review batch (current time)
+                    current_reviews = reviews[0] if reviews else {}
+                    reviews_count = len(current_reviews.get("subject_ids", []))
 
-                # Find next review time
-                next_review = session.exec(
-                    select(Assignment)
-                    .where(
-                        Assignment.user_id == user.id,
-                        Assignment.srs_stage > 0,
-                        not Assignment.hidden,
-                        Assignment.available_at > now,
-                    )
-                    .order_by(Assignment.available_at)
-                ).first()
-
+                # Get next review time
+                next_reviews_at = summary.get("next_reviews_at")
                 next_review_text = (
                     "No upcoming reviews"
-                    if not next_review
-                    else f"Next review at {next_review.available_at}"
+                    if not next_reviews_at
+                    else f"Next review at {next_reviews_at}"
                 )
 
                 return [
                     types.TextContent(
                         type="text",
-                        text=f"WaniKani Status for {user.username}:\nLevel: {user.level}\nLessons available: {len(lessons_count)}\nReviews available: {len(reviews_count)}\n{next_review_text}",
+                        text=f"WaniKani Status for {user.username}:\nLevel: {user.level}\nLessons available: {lessons_count}\nReviews available: {reviews_count}\n{next_review_text}",
                     )
                 ]
+            finally:
+                await client.close()
 
         elif name == "get_leeches":
             mcp_api_key = arguments["mcp_api_key"]
@@ -445,7 +433,7 @@ async def read_resource(uri: str) -> str:
                         "lessons_available": lessons_count,
                         "reviews_available": reviews_count,
                         "next_review_time": next_review.available_at.isoformat()
-                        if next_review
+                        if next_review and next_review.available_at
                         else None,
                         "last_sync": user.last_sync.isoformat()
                         if user.last_sync
@@ -468,13 +456,14 @@ async def read_resource(uri: str) -> str:
                 ).all()
 
                 # Group by hour
-                forecast = {}
+                forecast: dict[str, int] = {}
                 for assignment in upcoming_assignments:
-                    hour_key = assignment.available_at.replace(
-                        minute=0, second=0, microsecond=0
-                    )
-                    hour_str = hour_key.isoformat()
-                    forecast[hour_str] = forecast.get(hour_str, 0) + 1
+                    if assignment.available_at:
+                        hour_key = assignment.available_at.replace(
+                            minute=0, second=0, microsecond=0
+                        )
+                        hour_str = hour_key.isoformat()
+                        forecast[hour_str] = forecast.get(hour_str, 0) + 1
 
                 forecast_list = [
                     {"time": time, "count": count}
