@@ -1,22 +1,23 @@
-from datetime import datetime, timezone, timedelta
-from sqlmodel import Session, select
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.interval import IntervalTrigger
 import asyncio
 import logging
+from datetime import UTC, datetime, timedelta
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+from sqlmodel import Session, select
+
+from .config import settings
 from .database import get_engine
 from .models import (
-    User,
-    Subject,
     Assignment,
     ReviewStatistic,
+    Subject,
     SyncLog,
-    SyncType,
     SyncStatus,
+    SyncType,
+    User,
 )
 from .wanikani_client import WaniKaniClient
-from .config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,7 @@ class SyncService:
 
         with Session(engine) as session:
             # Get users who haven't synced in the last hour
-            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=1)
+            cutoff_time = datetime.now(UTC) - timedelta(hours=1)
             # Get users who need syncing (no last_sync or stale sync)
             no_sync_users = session.exec(
                 select(User).where(User.last_sync is None)
@@ -103,7 +104,7 @@ class SyncService:
                 user_id=user.id,
                 sync_type=SyncType.INCREMENTAL,
                 status=SyncStatus.IN_PROGRESS,
-                started_at=datetime.now(timezone.utc),
+                started_at=datetime.now(UTC),
             )
             session.add(sync_log)
             session.commit()
@@ -143,7 +144,7 @@ class SyncService:
                                 )
                             )
 
-                    db_user.last_sync = datetime.now(timezone.utc)
+                    db_user.last_sync = datetime.now(UTC)
                     session.add(db_user)
                     session.commit()
                     records_updated += 1
@@ -255,7 +256,7 @@ class SyncService:
                 if db_sync_log:
                     db_sync_log.status = SyncStatus.SUCCESS
                     db_sync_log.records_updated = records_updated
-                    db_sync_log.completed_at = datetime.now(timezone.utc)
+                    db_sync_log.completed_at = datetime.now(UTC)
                     session.add(db_sync_log)
                     session.commit()
 
@@ -268,7 +269,7 @@ class SyncService:
                 if db_sync_log:
                     db_sync_log.status = SyncStatus.ERROR
                     db_sync_log.error_message = str(e)
-                    db_sync_log.completed_at = datetime.now(timezone.utc)
+                    db_sync_log.completed_at = datetime.now(UTC)
                     session.add(db_sync_log)
                     session.commit()
             raise
@@ -389,7 +390,7 @@ class SyncService:
                     else None
                 )
                 existing_assignment.hidden = assignment_data.get("hidden", False)
-                existing_assignment.data_updated_at = datetime.now(timezone.utc)
+                existing_assignment.data_updated_at = datetime.now(UTC)
                 session.add(existing_assignment)
             else:
                 # Create new
@@ -430,7 +431,7 @@ class SyncService:
                     if assignment_data.get("resurrected_at")
                     else None,
                     hidden=assignment_data.get("hidden", False),
-                    data_updated_at=datetime.now(timezone.utc),
+                    data_updated_at=datetime.now(UTC),
                 )
                 session.add(assignment)
 

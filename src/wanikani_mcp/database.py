@@ -1,5 +1,7 @@
-from sqlmodel import SQLModel, create_engine, Session
-from typing import Generator
+from collections.abc import Generator
+
+from sqlmodel import Session, SQLModel, create_engine
+
 from .config import settings
 
 engine = create_engine(settings.database_url, echo=settings.debug)

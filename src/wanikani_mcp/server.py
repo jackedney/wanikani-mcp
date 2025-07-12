@@ -1,13 +1,13 @@
 import asyncio
 import logging
 import sys
-from typing import Optional
+
+from .config import settings
+from .database import create_tables
 
 # from .http_server import create_app
 from .mcp_server import main as run_mcp_stdio
 from .sync_service import sync_service
-from .database import create_tables
-from .config import settings
 
 
 # Configure logging
@@ -58,9 +58,7 @@ class ServerManager:
         logger.info(f"Received signal {signum}, shutting down...")
         self.shutdown_event.set()
 
-    async def run_http_server(
-        self, host: Optional[str] = None, port: Optional[int] = None
-    ):
+    async def run_http_server(self, host: str | None = None, port: int | None = None):
         """Run the HTTP MCP server"""
         logger.error("HTTP server mode not available - http_server.py was removed")
         raise NotImplementedError("HTTP server mode is not implemented")
@@ -80,7 +78,7 @@ class ServerManager:
 
 
 async def run_server(
-    mode: str = "stdio", host: Optional[str] = None, port: Optional[int] = None
+    mode: str = "stdio", host: str | None = None, port: int | None = None
 ):
     """Run the MCP server in the specified mode"""
     manager = ServerManager()

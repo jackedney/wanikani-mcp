@@ -1,26 +1,27 @@
 import asyncio
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
+
+from mcp import types
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp import types
 from mcp.types import AnyUrl
 from sqlmodel import Session, select
 
+from .auth import create_user_with_api_keys, verify_mcp_api_key
 from .database import get_engine
 from .models import (
-    User,
     Assignment,
-    Subject,
     ReviewStatistic,
+    Subject,
     SyncLog,
-    SyncType,
     SyncStatus,
+    SyncType,
+    User,
 )
-from .wanikani_client import WaniKaniClient
-from .auth import create_user_with_api_keys, verify_mcp_api_key
 from .sync_service import sync_service
+from .wanikani_client import WaniKaniClient
 
 # Create MCP server
 server = Server("wanikani-mcp")
@@ -112,7 +113,7 @@ async def _sync_user_data(user: User) -> int:
             user_id=user.id,
             sync_type=SyncType.MANUAL,
             status=SyncStatus.IN_PROGRESS,
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
         )
         session.add(sync_log)
         session.commit()
@@ -129,7 +130,7 @@ async def _sync_user_data(user: User) -> int:
             if db_user:
                 db_user.username = user_data["data"]["username"]
                 db_user.level = user_data["data"]["level"]
-                db_user.last_sync = datetime.now(timezone.utc)
+                db_user.last_sync = datetime.now(UTC)
                 session.add(db_user)
                 session.commit()
                 records_updated += 1
@@ -145,7 +146,7 @@ async def _sync_user_data(user: User) -> int:
             if db_sync_log:
                 db_sync_log.status = SyncStatus.SUCCESS
                 db_sync_log.records_updated = records_updated
-                db_sync_log.completed_at = datetime.now(timezone.utc)
+                db_sync_log.completed_at = datetime.now(UTC)
                 session.add(db_sync_log)
                 session.commit()
 
@@ -158,7 +159,7 @@ async def _sync_user_data(user: User) -> int:
             if db_sync_log:
                 db_sync_log.status = SyncStatus.ERROR
                 db_sync_log.error_message = str(e)
-                db_sync_log.completed_at = datetime.now(timezone.utc)
+                db_sync_log.completed_at = datetime.now(UTC)
                 session.add(db_sync_log)
                 session.commit()
         raise
@@ -400,7 +401,7 @@ async def read_resource(uri: str) -> str:
                         select(Assignment).where(
                             Assignment.user_id == user.id,
                             Assignment.srs_stage == 0,
-                            Assignment.available_at <= datetime.now(timezone.utc),
+                            Assignment.available_at <= datetime.now(UTC),
                         )
                     ).all()
                 )
@@ -410,7 +411,7 @@ async def read_resource(uri: str) -> str:
                         select(Assignment).where(
                             Assignment.user_id == user.id,
                             Assignment.srs_stage > 0,
-                            Assignment.available_at <= datetime.now(timezone.utc),
+                            Assignment.available_at <= datetime.now(UTC),
                         )
                     ).all()
                 )
@@ -420,7 +421,7 @@ async def read_resource(uri: str) -> str:
                     .where(
                         Assignment.user_id == user.id,
                         Assignment.srs_stage > 0,
-                        Assignment.available_at > datetime.now(timezone.utc),
+                        Assignment.available_at > datetime.now(UTC),
                     )
                     .order_by(Assignment.available_at)
                 ).first()
@@ -450,7 +451,7 @@ async def read_resource(uri: str) -> str:
                     .where(
                         Assignment.user_id == user.id,
                         Assignment.srs_stage > 0,
-                        Assignment.available_at > datetime.now(timezone.utc),
+                        Assignment.available_at > datetime.now(UTC),
                     )
                     .order_by(Assignment.available_at)
                 ).all()

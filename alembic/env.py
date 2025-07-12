@@ -3,8 +3,8 @@ from logging.config import fileConfig
 from sqlalchemy import create_engine
 
 from alembic import context
-from wanikani_mcp.models import SQLModel
 from wanikani_mcp.config import settings
+from wanikani_mcp.models import SQLModel
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

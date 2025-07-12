@@ -1,5 +1,6 @@
+from sqlmodel import Session, SQLModel, create_engine
+
 from wanikani_mcp.database import get_session
-from sqlmodel import SQLModel, create_engine, Session
 
 
 def test_get_session():
@@ -58,7 +59,7 @@ def test_database_indexes():
 
 def test_database_foreign_keys():
     """Test that foreign key relationships work"""
-    from wanikani_mcp.models import User, Subject, Assignment
+    from wanikani_mcp.models import Assignment, Subject, User
 
     engine = create_engine("sqlite:///:memory:")
     SQLModel.metadata.create_all(engine)

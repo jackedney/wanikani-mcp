@@ -1,20 +1,22 @@
+from datetime import UTC, datetime, timedelta
+
 import pytest
-from datetime import datetime, timezone, timedelta
-from sqlmodel import SQLModel, create_engine, Session
+from sqlmodel import Session, SQLModel, create_engine
+
 from wanikani_mcp.models import (
-    User,
-    Subject,
     Assignment,
+    LevelProgression,
     Review,
     ReviewStatistic,
     SrsStage,
-    LevelProgression,
     StudyMaterial,
-    VoiceActor,
-    SyncLog,
+    Subject,
     SubjectType,
+    SyncLog,
     SyncStatus,
     SyncType,
+    User,
+    VoiceActor,
 )
 
 
@@ -90,9 +92,9 @@ def sample_assignment(sample_user, sample_subject):
         subject_id=1,  # Will be set properly in tests
         subject_type=SubjectType.KANJI,
         srs_stage=3,
-        unlocked_at=datetime.now(timezone.utc) - timedelta(days=7),
-        started_at=datetime.now(timezone.utc) - timedelta(days=6),
-        available_at=datetime.now(timezone.utc) + timedelta(hours=4),
+        unlocked_at=datetime.now(UTC) - timedelta(days=7),
+        started_at=datetime.now(UTC) - timedelta(days=6),
+        available_at=datetime.now(UTC) + timedelta(hours=4),
     )
 
 
@@ -149,10 +151,10 @@ def sample_level_progression(sample_user):
         id=1,
         user_id=1,
         level=2,
-        unlocked_at=datetime.now(timezone.utc) - timedelta(days=30),
-        started_at=datetime.now(timezone.utc) - timedelta(days=25),
-        passed_at=datetime.now(timezone.utc) - timedelta(days=5),
-        completed_at=datetime.now(timezone.utc) - timedelta(days=1),
+        unlocked_at=datetime.now(UTC) - timedelta(days=30),
+        started_at=datetime.now(UTC) - timedelta(days=25),
+        passed_at=datetime.now(UTC) - timedelta(days=5),
+        completed_at=datetime.now(UTC) - timedelta(days=1),
     )
 
 
@@ -186,5 +188,5 @@ def sample_sync_log(sample_user):
         sync_type=SyncType.INCREMENTAL,
         status=SyncStatus.SUCCESS,
         records_updated=15,
-        completed_at=datetime.now(timezone.utc),
+        completed_at=datetime.now(UTC),
     )
