@@ -8,6 +8,8 @@ The WaniKani MCP (Model Context Protocol) Server acts as a bridge, providing AI 
 
 This server exposes powerful capabilities designed to enhance the WaniKani learning experience through AI:
 
+![Architecture Diagram](images/architecture.svg)
+
 *   **Automated Data Synchronization**: Keeps user data fresh and up-to-date by periodically syncing with the official WaniKani v2 API.
 *   **Real-time Progress & Status**: Provides AI assistants with instant access to a user's current WaniKani level, available lessons, upcoming reviews, and next review times.
 *   **Intelligent Leech Identification**: Utilizes an advanced algorithm to analyze review history and pinpoint consistently problematic items ("leeches"), enabling targeted learning strategies.
