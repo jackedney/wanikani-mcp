@@ -5,6 +5,10 @@ from .config import settings
 engine = create_engine(settings.database_url, echo=settings.debug)
 
 
+def get_engine():
+    return engine
+
+
 def create_tables():
     SQLModel.metadata.create_all(engine)
 

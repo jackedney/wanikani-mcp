@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from sqlmodel import SQLModel, Field, Relationship, Column, JSON
 from enum import Enum
@@ -8,6 +8,7 @@ class SubjectType(str, Enum):
     RADICAL = "radical"
     KANJI = "kanji"
     VOCABULARY = "vocabulary"
+    KANA_VOCABULARY = "kana_vocabulary"
 
 
 class SyncStatus(str, Enum):
@@ -34,7 +35,7 @@ class User(SQLModel, table=True):
     subscription_type: Optional[str] = None
     subscription_max_level_granted: Optional[int] = None
     subscription_period_ends_at: Optional[datetime] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_sync: Optional[datetime] = None
 
     assignments: list["Assignment"] = Relationship(back_populates="user")
@@ -63,7 +64,7 @@ class Subject(SQLModel, table=True):
     )
     document_url: str
     hidden_at: Optional[datetime] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     data_updated_at: Optional[datetime] = None
 
     assignments: list["Assignment"] = Relationship(back_populates="subject")
@@ -85,7 +86,7 @@ class Assignment(SQLModel, table=True):
     available_at: Optional[datetime] = Field(default=None, index=True)
     resurrected_at: Optional[datetime] = None
     hidden: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     data_updated_at: Optional[datetime] = None
 
     user: User = Relationship(back_populates="assignments")
@@ -101,7 +102,7 @@ class Review(SQLModel, table=True):
     ending_srs_stage: int
     incorrect_meaning_answers: int = Field(default=0)
     incorrect_reading_answers: int = Field(default=0)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     data_updated_at: Optional[datetime] = None
 
     user: User = Relationship(back_populates="reviews")
@@ -123,7 +124,7 @@ class ReviewStatistic(SQLModel, table=True):
     reading_current_streak: int = Field(default=0)
     percentage_correct: int = Field(default=0)
     hidden: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     data_updated_at: Optional[datetime] = None
 
     user: User = Relationship(back_populates="review_stats")
@@ -150,7 +151,7 @@ class LevelProgression(SQLModel, table=True):
     passed_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     abandoned_at: Optional[datetime] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     data_updated_at: Optional[datetime] = None
 
     user: User = Relationship(back_populates="level_progressions")
@@ -165,7 +166,7 @@ class StudyMaterial(SQLModel, table=True):
     reading_note: Optional[str] = None
     meaning_synonyms: List[str] = Field(default_factory=list, sa_column=Column(JSON))
     hidden: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     data_updated_at: Optional[datetime] = None
 
     user: User = Relationship(back_populates="study_materials")
@@ -186,7 +187,7 @@ class SyncLog(SQLModel, table=True):
     status: SyncStatus
     records_updated: int = 0
     error_message: Optional[str] = None
-    started_at: datetime = Field(default_factory=datetime.utcnow)
+    started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     completed_at: Optional[datetime] = None
 
     user: User = Relationship(back_populates="sync_logs")

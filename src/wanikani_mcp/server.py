@@ -1,158 +1,156 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from typing import Any
-import json
+import asyncio
+import logging
+import signal
+import sys
+import os
+from typing import Optional
 
-from mcp.server import Server
-from mcp import types
-from mcp.types import AnyUrl
-
+from .http_server import create_app
+from .mcp_server import main as run_mcp_stdio
+from .sync_service import sync_service
 from .database import create_tables
+from .config import settings
 
 
-app = FastAPI(title="WaniKani MCP Server")
+# Configure logging
+def setup_logging():
+    log_level = getattr(logging, settings.log_level.upper(), logging.INFO)
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    # Create formatter
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
 
-# MCP Server
-mcp_server = Server("wanikani-mcp")
+    # Console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
 
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+    root_logger.addHandler(console_handler)
 
-@mcp_server.list_tools()
-async def list_tools() -> list[types.Tool]:
-    return [
-        types.Tool(
-            name="get_status",
-            description="Get current WaniKani status including lessons, reviews, and level",
-            inputSchema={"type": "object", "properties": {}, "required": []},
-        ),
-        types.Tool(
-            name="get_leeches",
-            description="Get problematic items that need extra practice",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "limit": {
-                        "type": "integer",
-                        "description": "Maximum number of leeches to return",
-                        "default": 10,
-                    }
-                },
-                "required": [],
-            },
-        ),
-        types.Tool(
-            name="sync_data",
-            description="Manually trigger synchronization with WaniKani API",
-            inputSchema={"type": "object", "properties": {}, "required": []},
-        ),
-    ]
+    # Set specific logger levels
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("apscheduler").setLevel(logging.INFO)
 
 
-@mcp_server.call_tool()
-async def call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextContent]:
-    if name == "get_status":
-        return [
-            types.TextContent(
-                type="text",
-                text="Status: Level 5, 12 lessons, 23 reviews available. Next review in 2 hours.",
+logger = logging.getLogger(__name__)
+
+
+class ServerManager:
+    def __init__(self):
+        self.running = False
+        self.shutdown_event = asyncio.Event()
+
+    async def start_sync_service(self):
+        """Start the background sync service"""
+        create_tables()
+        await sync_service.start()
+        logger.info("Background sync service started")
+
+    async def stop_sync_service(self):
+        """Stop the background sync service"""
+        await sync_service.stop()
+        logger.info("Background sync service stopped")
+
+    def signal_handler(self, signum, frame):
+        """Handle shutdown signals"""
+        logger.info(f"Received signal {signum}, shutting down...")
+        self.shutdown_event.set()
+
+    async def run_http_server(
+        self, host: Optional[str] = None, port: Optional[int] = None
+    ):
+        """Run the HTTP MCP server"""
+        import uvicorn
+
+        # Use config defaults if not provided
+        host = host or settings.host
+        port = port or int(os.getenv("PORT", settings.port))
+
+        logger.info(f"Starting HTTP MCP server on {host}:{port}")
+        await self.start_sync_service()
+
+        try:
+            # Set up signal handlers
+            signal.signal(signal.SIGINT, self.signal_handler)
+            signal.signal(signal.SIGTERM, self.signal_handler)
+
+            config = uvicorn.Config(
+                create_app(), host=host, port=port, log_level=settings.log_level.lower()
             )
-        ]
-    elif name == "get_leeches":
-        limit = arguments.get("limit", 10)
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Top {limit} leeches: 人 (person), 水 (water), 火 (fire) - these need practice!",
-            )
-        ]
-    elif name == "sync_data":
-        return [
-            types.TextContent(
-                type="text",
-                text="Data sync initiated. This may take a few minutes to complete.",
-            )
-        ]
+            server = uvicorn.Server(config)
+
+            # Run server until shutdown signal
+            await server.serve()
+
+        except Exception as e:
+            logger.error(f"HTTP server error: {e}")
+        finally:
+            await self.stop_sync_service()
+
+    async def run_stdio_server(self):
+        """Run the stdio MCP server"""
+        logger.info("Starting stdio MCP server")
+        await self.start_sync_service()
+
+        try:
+            # Run the stdio MCP server
+            await run_mcp_stdio()
+        except Exception as e:
+            logger.error(f"Stdio server error: {e}")
+        finally:
+            await self.stop_sync_service()
+
+
+async def run_server(
+    mode: str = "stdio", host: Optional[str] = None, port: Optional[int] = None
+):
+    """Run the MCP server in the specified mode"""
+    manager = ServerManager()
+
+    if mode == "http":
+        await manager.run_http_server(host, port)
+    elif mode == "stdio":
+        await manager.run_stdio_server()
     else:
-        raise ValueError(f"Unknown tool: {name}")
+        raise ValueError(f"Unknown server mode: {mode}")
 
 
-@mcp_server.list_resources()
-async def list_resources() -> list[types.Resource]:
-    return [
-        types.Resource(
-            uri=AnyUrl("wanikani://user_progress"),
-            name="User Progress",
-            description="Current user progress and statistics",
-            mimeType="application/json",
-        ),
-        types.Resource(
-            uri=AnyUrl("wanikani://review_forecast"),
-            name="Review Forecast",
-            description="Timeline of upcoming reviews",
-            mimeType="application/json",
-        ),
-        types.Resource(
-            uri=AnyUrl("wanikani://item_database"),
-            name="Item Database",
-            description="Searchable collection of user's WaniKani items",
-            mimeType="application/json",
-        ),
-    ]
+if __name__ == "__main__":
+    # Setup logging first
+    setup_logging()
 
+    # Parse command line arguments
+    import argparse
 
-@mcp_server.read_resource()
-async def read_resource(uri: str) -> str:
-    if uri == "wanikani://user_progress":
-        return json.dumps(
-            {
-                "level": 5,
-                "lessons_available": 12,
-                "reviews_available": 23,
-                "next_review_time": "2024-01-15T14:00:00Z",
-            }
-        )
-    elif uri == "wanikani://review_forecast":
-        return json.dumps(
-            {
-                "forecast": [
-                    {"time": "2024-01-15T14:00:00Z", "count": 23},
-                    {"time": "2024-01-15T20:00:00Z", "count": 15},
-                    {"time": "2024-01-16T08:00:00Z", "count": 31},
-                ]
-            }
-        )
-    elif uri == "wanikani://item_database":
-        return json.dumps(
-            {
-                "items": [
-                    {"id": 1, "characters": "人", "meaning": "person", "level": 1},
-                    {"id": 2, "characters": "水", "meaning": "water", "level": 1},
-                    {"id": 3, "characters": "火", "meaning": "fire", "level": 2},
-                ]
-            }
-        )
-    else:
-        raise ValueError("Resource not found")
+    parser = argparse.ArgumentParser(description="WaniKani MCP Server")
+    parser.add_argument(
+        "--mode",
+        choices=["http", "stdio"],
+        default="stdio",
+        help="Server mode (default: stdio)",
+    )
+    parser.add_argument(
+        "--host",
+        default=settings.host,
+        help=f"HTTP server host (default: {settings.host})",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=settings.port,
+        help=f"HTTP server port (default: {settings.port})",
+    )
 
+    args = parser.parse_args()
 
-@app.on_event("startup")
-async def startup():
-    create_tables()
-
-
-@app.get("/")
-async def root():
-    return {"message": "WaniKani MCP Server", "version": "0.1.0"}
-
-
-@app.get("/health")
-async def health():
-    return {"status": "healthy"}
+    try:
+        asyncio.run(run_server(args.mode, args.host, args.port))
+    except KeyboardInterrupt:
+        logger.info("Server stopped by user")
+    except Exception as e:
+        logger.error(f"Server failed: {e}")
+        sys.exit(1)

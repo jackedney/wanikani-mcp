@@ -10,7 +10,6 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-import sqlmodel
 
 
 # revision identifiers, used by Alembic.
@@ -64,18 +63,14 @@ def upgrade() -> None:
     op.create_table(
         "user",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column(
-            "wanikani_api_key", sa.String(), nullable=False
-        ),
+        sa.Column("wanikani_api_key", sa.String(), nullable=False),
         sa.Column("mcp_api_key", sa.String(), nullable=False),
         sa.Column("username", sa.String(), nullable=False),
         sa.Column("level", sa.Integer(), nullable=False),
         sa.Column("profile_url", sa.String(), nullable=True),
         sa.Column("started_at", sa.DateTime(), nullable=True),
         sa.Column("subscription_active", sa.Boolean(), nullable=False),
-        sa.Column(
-            "subscription_type", sa.String(), nullable=True
-        ),
+        sa.Column("subscription_type", sa.String(), nullable=True),
         sa.Column("subscription_max_level_granted", sa.Integer(), nullable=True),
         sa.Column("subscription_period_ends_at", sa.DateTime(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=False),

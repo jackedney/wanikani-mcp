@@ -1,10 +1,39 @@
 import httpx
+import asyncio
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 from .config import settings
 
 
+class RateLimiter:
+    def __init__(self, max_requests: int, period: float = 60.0):
+        self.max_requests = max_requests
+        self.period = period
+        self.requests = []
+        self._lock = asyncio.Lock()
+
+    async def acquire(self):
+        async with self._lock:
+            now = asyncio.get_event_loop().time()
+            # Remove old requests outside the period
+            self.requests = [
+                req_time for req_time in self.requests if now - req_time < self.period
+            ]
+
+            if len(self.requests) >= self.max_requests:
+                # Calculate how long to wait
+                oldest_request = min(self.requests)
+                wait_time = self.period - (now - oldest_request)
+                await asyncio.sleep(wait_time)
+                return await self.acquire()
+
+            self.requests.append(now)
+
+
 class WaniKaniClient:
+    # Class-level rate limiter shared across all instances
+    _rate_limiter = RateLimiter(settings.wanikani_rate_limit, 60.0)
+
     def __init__(self, api_key: str):
         self.api_key = api_key
         self.base_url = settings.wanikani_api_base_url
@@ -22,6 +51,9 @@ class WaniKaniClient:
     async def _get(
         self, endpoint: str, params: Optional[Dict] = None
     ) -> Dict[str, Any]:
+        # Apply rate limiting
+        await self._rate_limiter.acquire()
+
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
         response = await self.client.get(url, params=params)
         response.raise_for_status()

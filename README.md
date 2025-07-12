@@ -1,108 +1,209 @@
 # WaniKani MCP Server
 
-## 🌟 Empowering AI Assistants with WaniKani Data 🌟
+A production-ready MCP (Model Context Protocol) server that connects AI assistants like Claude Code to WaniKani learning data. Get real-time progress updates, identify problem items, and manage your Japanese learning workflow through natural conversation.
 
-The WaniKani MCP (Model Context Protocol) Server is a robust backend service designed to provide AI assistants with seamless, real-time access to WaniKani user data and functionality. By implementing the MCP specification over JSON-RPC via HTTP, this server enables AI assistants to:
+## ✨ Quick Start
 
-*   **Retrieve User Progress**: Get up-to-date information on WaniKani levels, available lessons, and upcoming reviews.
-*   **Trigger Data Synchronization**: Manually initiate data syncs with the official WaniKani v2 API to ensure fresh data.
-*   **Identify Problematic Items (Leeches)**: Leverage advanced algorithms to pinpoint consistently challenging items for targeted learning.
-*   **Offer Personalized Learning Assistance**: Empower AI to provide tailored support based on individual user data.
+### For Users
 
----
+1. **Get the server running** (see deployment options below)
+2. **Connect Claude Code:**
+   ```bash
+   claude connect your-server-url --api-key=your-mcp-key
+   ```
+3. **Register your WaniKani account:**
+   ```
+   Register me with WaniKani API token: your-wanikani-token
+   ```
+4. **Start learning:**
+   ```
+   How many lessons and reviews do I have?
+   What are my worst leeches that need practice?
+   ```
 
-## 🚀 Key Features
+### For Developers
 
-*   **Automated Data Synchronization**: Keeps user data fresh and up-to-date by periodically syncing with the official WaniKani v2 API.
-*   **Real-time Progress & Status**: Provides AI assistants with instant access to a user's current WaniKani level, available lessons, upcoming reviews, and next review times.
-*   **Intelligent Leech Identification**: Utilizes an advanced algorithm to analyze review history and pinpoint consistently problematic items ("leeches"), enabling targeted learning strategies.
-*   **Multi-User Support**: Securely manages data for multiple users through API key-based authentication, ensuring personalized and private access.
+```bash
+git clone https://github.com/jackedney/wanikani-mcp.git
+cd wanikani-mcp
+uv install
+cp .env.example .env  # Configure your database
+uv run alembic upgrade head
+task dev
+```
 
----
+## 🎯 What This Does
 
-## 🏗️ Architecture Overview
+**Real Learning Integration**: Your AI assistant can now see your actual WaniKani progress and help with personalized study strategies.
 
-The server is built with a focus on modularity and scalability, leveraging modern Python technologies.
+### Architecture Overview
 
 ![Architecture Diagram](images/architecture.png)
 
----
+**Core Features:**
+- **Live Status**: Current level, lesson count, review count, next review time
+- **Leech Detection**: Identifies consistently difficult items for focused practice  
+- **Background Sync**: Keeps data fresh automatically (every 30 minutes)
+- **Multi-User**: Secure per-user authentication with MCP API keys
 
-## 🛠️ Getting Started
+**Example Conversations:**
+```
+You: "How am I doing with my Japanese studies?"
+Claude: "You're Level 8 with 30 lessons and 206 reviews available. Your next reviews are at 11:00 PM."
 
-This guide will help you set up and run the WaniKani MCP Server locally.
+You: "What should I focus on?"
+Claude: "You have 15 leeches - items you consistently get wrong. Let's practice these kanji: 体, 茶, 牛..."
+```
 
-### Prerequisites
+## 🔧 MCP Tools & Resources
 
-*   Python 3.9+
-*   `uv` (recommended package manager)
-*   PostgreSQL database
+### Tools (Actions)
+- **`register_user`**: Connect your WaniKani account securely
+- **`get_status`**: Current level, lessons, reviews, next review time
+- **`get_leeches`**: Items that need extra practice (wrong >3 times)
+- **`sync_data`**: Manual data refresh from WaniKani
 
-### Installation
+### Resources (Data Access)
+- **`user_progress`**: Detailed statistics and learning metrics
+- **`review_forecast`**: Timeline of upcoming review sessions
+- **`item_database`**: Searchable collection of your WaniKani items
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/jackedney/wanikani-mcp.git
-    cd wanikani-mcp
-    ```
+## 🚀 Deployment Options
 
-2.  **Install dependencies using `uv`:**
-    ```bash
-    uv install
-    ```
+### Render (Recommended)
 
-3.  **Configure Environment Variables:**
-    Create a `.env` file in the root directory based on `.env.example` (if available) and fill in your PostgreSQL connection string and WaniKani API key.
-    *   **Note**: `.env.example` is currently under construction and may not be available yet.
+1. **Fork this repository**
+2. **Connect to Render:**
+   - Create new Web Service from your fork
+   - Environment: `DATABASE_URL` (PostgreSQL connection string)
+   - Build: `uv install` 
+   - Start: `uv run python -m wanikani_mcp.http_server`
+3. **Run migrations:** `uv run alembic upgrade head`
 
-4.  **Run Database Migrations:**
-    ```bash
-    uv run alembic upgrade head
-    ```
-
-### Usage
-
-To start the development server:
+### Local Development
 
 ```bash
+# Install dependencies
+uv install
+
+# Set up database
+cp .env.example .env
+# Edit .env with your PostgreSQL URL
+uv run alembic upgrade head
+
+# Run in stdio mode (for Claude Code)
 task dev
+
+# Run in HTTP mode (for web access)  
+task dev-http
 ```
-*   **Note**: The `task dev` command is currently under construction and may not be fully implemented yet. You might need to run the server directly via `uv run python src/wanikani_mcp/server.py` if `task dev` fails.
 
-The server will typically run on `http://localhost:8000`. You can then interact with it using MCP-compliant AI assistants or by sending JSON-RPC requests to its endpoints.
+### Container (Podman/Docker)
 
-### Core MCP Tools
+```bash
+# Build
+podman build -t wanikani-mcp .
 
-AI assistants can leverage the following tools:
+# Run
+podman run -p 8000:8000 \
+  -e DATABASE_URL="postgresql://user:pass@host/db" \
+  wanikani-mcp
+```
 
-*   **`get_status`**: Obtain a snapshot of the user's current WaniKani learning status.
-*   **`get_leeches`**: Identify and retrieve a list of the user's most challenging items.
-*   **`sync_data`**: Manually initiate a data synchronization with WaniKani servers.
+## 🔐 Security & Authentication
 
-### Available MCP Resources
+**Two-Tier Security:**
+1. **WaniKani API Token**: Your personal WaniKani API key (from wanikani.com/settings/personal_access_tokens)
+2. **MCP API Key**: Generated server key for Claude Code authentication
 
-The server also exposes structured data resources:
+**Registration Flow:**
+1. Get your WaniKani API token from https://www.wanikani.com/settings/personal_access_tokens
+2. Use `register_user` tool with your WaniKani token
+3. Receive MCP API key for all future requests
+4. MCP API key authenticates you for `get_status`, `get_leeches`, `sync_data`
 
-*   **`user_progress`**: Comprehensive statistics and progress details for a user.
-*   **`review_forecast`**: A timeline of upcoming reviews.
-*   **`item_database`**: A searchable collection of all WaniKani items relevant to the user.
+**Privacy:** Each user's data is completely isolated. MCP API keys are securely generated and hashed.
 
----
+## ⚙️ Configuration
+
+**Environment Variables** (copy `.env.example` to `.env`):
+```bash
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
+WANIKANI_API_BASE_URL=https://api.wanikani.com/v2
+SYNC_INTERVAL_MINUTES=30
+MAX_CONCURRENT_SYNCS=3
+RATE_LIMIT_PER_MINUTE=60
+LOG_LEVEL=INFO
+```
+
+**MCP Server Configuration** (for Claude Code):
+```json
+{
+  "mcpServers": {
+    "wanikani": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "wanikani_mcp.server"],
+      "cwd": "/path/to/wanikani-mcp"
+    }
+  }
+}
+```
 
 ## 🧑‍💻 Development
 
-For contributors and developers:
+**Code Quality:**
+```bash
+uv run ruff check .      # Linting
+uv run ruff format .     # Formatting  
+uvx ty check .           # Type checking
+uv run pytest           # Testing
+```
 
-*   **Run Linter/Formatter**: 
-    ```bash
-    uv run ruff check .
-    uv run ruff format .
-    ```
-*   **Run Type Checker**: 
-    ```bash
-    uvx ty check .
-    ```
-*   **Run Tests**: 
-    ```bash
-    uv run pytest
-    ```
+**Database Management:**
+```bash
+# Create migration
+uv run alembic revision --autogenerate -m "description"
+
+# Apply migrations
+uv run alembic upgrade head
+
+# Reset database (development only)
+uv run python -c "from wanikani_mcp.database import reset_database; reset_database()"
+```
+
+**Tech Stack:**
+- **Framework**: FastAPI + Python MCP SDK
+- **Database**: PostgreSQL + SQLModel ORM  
+- **Background Jobs**: APScheduler
+- **Package Manager**: uv
+- **Containerization**: Podman
+- **Deployment**: Render
+
+## 🤝 Production Checklist
+
+Before deploying:
+- [ ] PostgreSQL database configured
+- [ ] Environment variables set
+- [ ] Database migrations applied
+- [ ] Rate limiting configured
+- [ ] Monitoring/logging enabled
+- [ ] SSL/TLS certificates in place
+- [ ] Backup strategy implemented
+
+## 📈 Monitoring
+
+**Health Check Endpoint**: `GET /health`
+**Metrics**: Built-in logging for sync operations, API calls, and errors
+**Database**: Monitor connection pool, query performance, storage usage
+
+---
+
+## 📄 License
+
+See [LICENSE](LICENSE) for details.
+
+## 🙏 Acknowledgments
+
+- **WaniKani**: For providing the excellent Japanese learning platform and API
+- **Anthropic**: For the MCP specification and Claude Code integration
+- **Python MCP SDK**: For the foundational MCP implementation

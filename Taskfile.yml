@@ -1,0 +1,74 @@
+version: '3'
+
+vars:
+  UV_RUN: uv run
+
+tasks:
+  dev:
+    desc: Run the development MCP server
+    cmd: "{{.UV_RUN}} python -m wanikani_mcp.server --mode stdio"
+
+  dev-http:
+    desc: Run the development HTTP server
+    cmd: "{{.UV_RUN}} python -m wanikani_mcp.server --mode http --port 8000"
+
+  build:
+    desc: Build the application
+    cmd: echo "Build complete - Python packages ready"
+
+  test:
+    desc: Run tests
+    cmd: "{{.UV_RUN}} pytest"
+
+  test-watch:
+    desc: Run tests in watch mode
+    cmd: "{{.UV_RUN}} pytest-watch"
+
+  lint:
+    desc: Run linter and formatter
+    cmds:
+      - "{{.UV_RUN}} ruff check ."
+      - "{{.UV_RUN}} ruff format ."
+
+  lint-check:
+    desc: Check linting without fixing
+    cmd: "{{.UV_RUN}} ruff check ."
+
+  type-check:
+    desc: Run type checker
+    cmd: uvx ty check .
+
+  db-migrate:
+    desc: Run database migrations
+    cmd: "{{.UV_RUN}} alembic upgrade head"
+
+  db-create-migration:
+    desc: Create a new database migration
+    cmd: "{{.UV_RUN}} alembic revision --autogenerate -m \"{{.CLI_ARGS}}\""
+
+  install:
+    desc: Install dependencies
+    cmd: uv install
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -rf __pycache__/
+      - rm -rf .pytest_cache/
+      - rm -rf .coverage
+      - find . -name "*.pyc" -delete
+
+  check:
+    desc: Run all checks (lint, type-check, test)
+    cmds:
+      - task: lint-check
+      - task: type-check
+      - task: test
+
+  mcp-stdio:
+    desc: Run MCP server in stdio mode
+    cmd: "{{.UV_RUN}} python -m wanikani_mcp.mcp_server"
+
+  mcp-http:
+    desc: Run MCP server in HTTP mode
+    cmd: "{{.UV_RUN}} python -m wanikani_mcp.http_server"

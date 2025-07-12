@@ -1,8 +1,12 @@
 from mcp.server.fastmcp import FastMCP
 from typing import Any
 import json
+import logging
 
 from .database import create_tables
+from .sync_service import sync_service
+
+logger = logging.getLogger(__name__)
 
 mcp: FastMCP = FastMCP("wanikani-mcp")
 
@@ -87,13 +91,27 @@ async def item_database(user_id: str) -> str:
     )
 
 
+async def startup_event():
+    """Initialize the application"""
+    create_tables()
+    await sync_service.start()
+    logger.info("WaniKani MCP server started with background sync")
+
+
+async def shutdown_event():
+    """Clean up on shutdown"""
+    await sync_service.stop()
+    logger.info("WaniKani MCP server stopped")
+
+
 def create_app():
     """Create and configure the FastMCP application"""
-    create_tables()
-    # For FastMCP, the server itself handles HTTP routing
-    # Return the mcp instance which can be used with uvicorn
+    # FastMCP doesn't support lifecycle events in the same way
+    # We'll handle startup/shutdown in the server manager
     return mcp
 
 
 if __name__ == "__main__":
+    # Set up logging
+    logging.basicConfig(level=logging.INFO)
     mcp.run(transport="sse")

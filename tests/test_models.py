@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from wanikani_mcp.models import (
     User,
     Subject,
@@ -50,7 +50,7 @@ def test_assignment_relationship(session, sample_user, sample_subject):
         subject_id=sample_subject.id,
         subject_type=SubjectType.KANJI,
         srs_stage=1,
-        available_at=datetime.utcnow(),
+        available_at=datetime.now(timezone.utc),
     )
     session.add(assignment)
     session.commit()

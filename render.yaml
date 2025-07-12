@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: wanikani-mcp
+    env: docker
+    dockerfilePath: ./Containerfile
+    plan: starter
+    region: oregon
+    branch: main
+    buildCommand: ""
+    startCommand: "python -m wanikani_mcp.server --mode http --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: WANIKANI_API_BASE_URL
+        value: https://api.wanikani.com/v2
+      - key: DEBUG
+        value: false
+      - key: LOG_LEVEL
+        value: INFO
+      - key: SYNC_INTERVAL_MINUTES
+        value: 30
+      - key: MAX_CONCURRENT_SYNCS
+        value: 3
+      - key: WANIKANI_RATE_LIMIT
+        value: 60
+    autoDeploy: true
+    
+  - type: pserv
+    name: wanikani-mcp-db
+    env: docker
+    plan: starter
+    region: oregon
+    databaseName: wanikani_mcp
+    databaseUser: wanikani_user
