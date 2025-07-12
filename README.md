@@ -100,7 +100,7 @@ For contributors and developers:
     ```
 *   **Run Type Checker**: 
     ```bash
-    uvx ty check .
+    uv run ty check .
     ```
 *   **Run Tests**: 
     ```bash
