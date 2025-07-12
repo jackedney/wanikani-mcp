@@ -50,6 +50,3 @@ To set up the project locally, ensure you have `uv` installed, then:
 
 For more detailed development information, please refer to the project's internal documentation.
 
-## Contribution
-
-We welcome contributions! Please refer to our contribution guidelines (link to be added) for more information.
