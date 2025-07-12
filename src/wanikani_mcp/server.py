@@ -19,14 +19,17 @@ def setup_logging():
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    # Console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
+    # File handler for stdio mode (avoid console output)
+    import os
+
+    log_file = os.path.join(os.getcwd(), "server.log")
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setFormatter(formatter)
 
     # Configure root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
-    root_logger.addHandler(console_handler)
+    root_logger.addHandler(file_handler)
 
     # Set specific logger levels
     logging.getLogger("httpx").setLevel(logging.WARNING)

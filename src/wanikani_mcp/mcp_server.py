@@ -32,7 +32,9 @@ async def list_tools() -> list[types.Tool]:
     return [
         types.Tool(
             name="register_user",
-            description="Register a new user with their WaniKani API key to get MCP key",
+            description=(
+                "Register a new user with their WaniKani API key to get MCP key"
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -212,8 +214,12 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextCont
                 return [
                     types.TextContent(
                         type="text",
-                        text=f"Registration successful! Your MCP API key is: {mcp_api_key}\n\n"
-                        f"Save this key securely - you'll need it for all operations.",
+                        text=(
+                            f"Registration successful! Your MCP API key is: "
+                            f"{mcp_api_key}\n\n"
+                            f"Save this key securely - you'll need it for all "
+                            f"operations."
+                        ),
                     )
                 ]
 
@@ -254,7 +260,13 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextCont
                 return [
                     types.TextContent(
                         type="text",
-                        text=f"WaniKani Status for {user.username}:\nLevel: {user.level}\nLessons available: {lessons_count}\nReviews available: {reviews_count}\n{next_review_text}",
+                        text=(
+                            f"WaniKani Status for {user.username}:\n"
+                            f"Level: {user.level}\n"
+                            f"Lessons available: {lessons_count}\n"
+                            f"Reviews available: {reviews_count}\n"
+                            f"{next_review_text}"
+                        ),
                     )
                 ]
             finally:
@@ -299,7 +311,10 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextCont
                     ]
                     meaning_text = meanings[0] if meanings else "Unknown"
 
-                    leech_text += f"• {subject.characters or subject.slug} ({meaning_text}) - {accuracy}% accuracy, {total_errors} errors\n"
+                    leech_text += (
+                        f"• {subject.characters or subject.slug} ({meaning_text}) - "
+                        f"{accuracy}% accuracy, {total_errors} errors\n"
+                    )
 
                 return [
                     types.TextContent(
@@ -318,7 +333,10 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextCont
             return [
                 types.TextContent(
                     type="text",
-                    text=f"Data sync completed! Updated {records_updated} records including subjects, assignments, and review statistics.",
+                    text=(
+                        f"Data sync completed! Updated {records_updated} records "
+                        f"including subjects, assignments, and review statistics."
+                    ),
                 )
             ]
 

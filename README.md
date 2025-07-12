@@ -4,13 +4,14 @@ A production-ready MCP (Model Context Protocol) server that connects AI assistan
 
 ## ✨ Quick Start
 
-### For Users
+### For Users with Claude Code
 
-1. **Get the server running** (see deployment options below)
-2. **Connect Claude Code:**
+1. **Set up the MCP server connection:**
    ```bash
-   claude connect your-server-url --api-key=your-mcp-key
+   cd wanikani-mcp
+   claude mcp add-json wanikani '{"command": "uv", "args": ["run", "python", "-m", "wanikani_mcp.server"], "env": {}, "cwd": "/path/to/wanikani-mcp"}'
    ```
+2. **Verify connection:** Run `claude mcp list` - wanikani should show as "connected"
 3. **Register your WaniKani account:**
    ```
    Register me with WaniKani API token: your-wanikani-token
@@ -137,17 +138,31 @@ LOG_LEVEL=INFO
 ```
 
 **MCP Server Configuration** (for Claude Code):
+
+**Method 1: JSON Configuration (Recommended)**
+```bash
+cd /path/to/wanikani-mcp
+claude mcp add-json wanikani '{"command": "uv", "args": ["run", "python", "-m", "wanikani_mcp.server"], "env": {}, "cwd": "/path/to/wanikani-mcp"}'
+```
+
+**Method 2: Manual Configuration**
 ```json
 {
   "mcpServers": {
     "wanikani": {
       "command": "uv",
       "args": ["run", "python", "-m", "wanikani_mcp.server"],
-      "cwd": "/path/to/wanikani-mcp"
+      "cwd": "/path/to/wanikani-mcp",
+      "env": {}
     }
   }
 }
 ```
+
+**Important**: 
+- Must specify `cwd` (working directory) for the server to find dependencies
+- Server uses file logging to avoid interfering with stdio MCP communication
+- Run `uv install` first to ensure dependencies are available
 
 ## 🧑‍💻 Development
 

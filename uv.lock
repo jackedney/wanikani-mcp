@@ -273,6 +273,22 @@ wheels = [
 ]
 
 [[package]]
+name = "go-task-bin"
+version = "3.44.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/eb/4b/4fe1c50435a190fbded835310d6abf53da086bc76ce2dc2f85b7aab074fb/go_task_bin-3.44.0.tar.gz", hash = "sha256:20dfd14cf5e03d89416bfa4a007343653efeb102df490797b4e576b44b18025e", size = 570248, upload-time = "2025-06-09T01:48:11.189Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f8/7a/f460338d67febd4dac09de0824880df54346a06d65d6f38e77f4b16c0ef3/go_task_bin-3.44.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:8a81872de82b9b17ba779a6ceeca9f25a36a34ffda9e1eb0eb983a33374dd4b1", size = 6376749, upload-time = "2025-06-09T01:47:54.211Z" },
+    { url = "https://files.pythonhosted.org/packages/75/2d/14c679db2e7dbb19fabb28f14eef414f019baa691c8645c2feab9151269d/go_task_bin-3.44.0-py3-none-macosx_11_0_x86_64.whl", hash = "sha256:f0e66442aa0f99a47020a6443ad0d28d0d9c0cf15c593a8a07ad9d50b555a2fd", size = 6831296, upload-time = "2025-06-09T01:47:56.707Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/fb/49bcbf41e3831657cd46874e7a1f5f64d60155419e969aa2bc149ccfdcff/go_task_bin-3.44.0-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:72d8b9cc199abedcebaae6c369f92cf3d3eb5b1e8b0433264f1f29a4ffea8dd2", size = 6142148, upload-time = "2025-06-09T01:47:59.035Z" },
+    { url = "https://files.pythonhosted.org/packages/ae/cb/78b4084b8dbdd145782b31e348c11a65006923585ae0582057dfc7b9d53b/go_task_bin-3.44.0-py3-none-manylinux2014_ppc64le.manylinux_2_17_ppc64le.musllinux_1_1_ppc64le.whl", hash = "sha256:d6931c5a2af8bb3b6ab7a353f26d411da2db782da5fbbf87154daa3bebbb5a99", size = 6112342, upload-time = "2025-06-09T01:48:00.679Z" },
+    { url = "https://files.pythonhosted.org/packages/fd/4f/1bc44454cf4cc645dd12e460eb487688b21fd831793550906f672c8456d8/go_task_bin-3.44.0-py3-none-manylinux2014_s390x.manylinux_2_17_s390x.musllinux_1_1_s390x.whl", hash = "sha256:728fddbceb1017dbb1cde65e4ff81e3d2b38d5a86cc4260c650b074f21cf88a5", size = 6591152, upload-time = "2025-06-09T01:48:02.465Z" },
+    { url = "https://files.pythonhosted.org/packages/21/7b/43a32d683022ae7f488b1c162a11ae9ea5849d5fa4f33feaf6559512487a/go_task_bin-3.44.0-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.musllinux_1_1_x86_64.whl", hash = "sha256:255302489cc3426973dc723e239c96c6075fc087d4c5033e50fa73f7a3563ee7", size = 6725515, upload-time = "2025-06-09T01:48:04.147Z" },
+    { url = "https://files.pythonhosted.org/packages/c9/58/98106d43e9f7237d40e633ab6569beb7bb8734daa6c8b4bdd5f3264257ff/go_task_bin-3.44.0-py3-none-win_amd64.whl", hash = "sha256:f61e42bc6e29afa245521e9f1da3ff4a4bb504c7484572046df427ee43b20aef", size = 6918292, upload-time = "2025-06-09T01:48:06.204Z" },
+    { url = "https://files.pythonhosted.org/packages/e0/84/11333cfa6cee1779dbfa5a774f69b8b4ca822c8dea5fb9a9bd81bac6288c/go_task_bin-3.44.0-py3-none-win_arm64.whl", hash = "sha256:4c72f80d7b1f1e33f1a926dcfdbed092913256a73c119186cc930b3be3a4deaf", size = 6240951, upload-time = "2025-06-09T01:48:08.484Z" },
+]
+
+[[package]]
 name = "greenlet"
 version = "3.2.3"
 source = { registry = "https://pypi.org/simple" }
@@ -978,6 +994,7 @@ dependencies = [
     { name = "apscheduler" },
     { name = "fastapi" },
     { name = "fastmcp" },
+    { name = "go-task-bin" },
     { name = "httpx" },
     { name = "mcp" },
     { name = "psycopg2-binary" },
@@ -998,6 +1015,7 @@ requires-dist = [
     { name = "apscheduler", specifier = ">=3.11.0" },
     { name = "fastapi", specifier = ">=0.116.1" },
     { name = "fastmcp", specifier = ">=2.10.5" },
+    { name = "go-task-bin", specifier = ">=3.44.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "mcp", specifier = ">=1.11.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },

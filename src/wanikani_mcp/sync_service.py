@@ -118,6 +118,31 @@ class SyncService:
             # For new users (no last_sync), do a full sync
             last_sync = user.last_sync
 
+            # Check if this is an initial sync (no data in database)
+            with Session(engine) as session:
+                from sqlmodel import text
+
+                subject_count = session.exec(
+                    text("SELECT COUNT(*) FROM subject")
+                ).one()[0]
+                review_stats_count = session.exec(
+                    text(
+                        f"SELECT COUNT(*) FROM reviewstatistic "
+                        f"WHERE user_id = {user.id}"
+                    )
+                ).one()[0]
+
+                # If we have no subjects or no review stats for this user,
+                # do a full sync
+                is_initial_sync = subject_count == 0 or review_stats_count == 0
+                if is_initial_sync:
+                    logger.info(
+                        f"Performing initial sync for user {user.username} "
+                        f"(subjects: {subject_count}, "
+                        f"review_stats: {review_stats_count})"
+                    )
+                    last_sync = None  # Don't filter by updated_after for initial sync
+
             # Update user profile
             user_data = await client.get_user()
             with Session(engine) as session:
@@ -158,13 +183,20 @@ class SyncService:
 
                 for i, subject_item in enumerate(subjects_data):
                     try:
-                        # Handle the nested structure: top-level has id, data has the actual subject info
+                        # Handle the nested structure: top-level has id,
+                        # data has the actual subject info
                         subject_id = subject_item.get("id")
                         subject_data = subject_item.get("data", subject_item)
 
-                        # Add the ID to the data for processing
+                        # Add the ID and object_type to the data for processing
                         if subject_id:
                             subject_data["id"] = subject_id
+                            subject_data["object_type"] = subject_item.get(
+                                "object"
+                            )  # radical, kanji, vocabulary
+                            subject_data["data_updated_at"] = subject_item.get(
+                                "data_updated_at"
+                            )
                             await self._upsert_subject(subject_data)
                             records_updated += 1
 
@@ -185,12 +217,14 @@ class SyncService:
             try:
                 assignments_data = await client.get_assignments(updated_after=last_sync)
                 logger.info(
-                    f"Syncing {len(assignments_data)} assignments for user {user.username}"
+                    f"Syncing {len(assignments_data)} assignments for user "
+                    f"{user.username}"
                 )
 
                 for i, assignment_item in enumerate(assignments_data):
                     try:
-                        # Handle the nested structure: top-level has id, data has the actual assignment info
+                        # Handle the nested structure: top-level has id,
+                        # data has the actual assignment info
                         assignment_id = assignment_item.get("id")
                         assignment_data = assignment_item.get("data", assignment_item)
 
@@ -204,7 +238,8 @@ class SyncService:
                             # Log progress for large syncs
                             if (i + 1) % 500 == 0:
                                 logger.info(
-                                    f"Synced {i + 1}/{len(assignments_data)} assignments"
+                                    f"Synced {i + 1}/{len(assignments_data)} "
+                                    f"assignments"
                                 )
                     except Exception as e:
                         logger.error(f"Error syncing assignment {assignment_id}: {e}")
@@ -220,18 +255,23 @@ class SyncService:
                     updated_after=last_sync
                 )
                 logger.info(
-                    f"Syncing {len(review_stats_data)} review statistics for user {user.username}"
+                    f"Syncing {len(review_stats_data)} review statistics for user "
+                    f"{user.username}"
                 )
 
                 for i, stats_item in enumerate(review_stats_data):
                     try:
-                        # Handle the nested structure: top-level has id, data has the actual stats info
+                        # Handle the nested structure: top-level has id,
+                        # data has the actual stats info
                         stats_id = stats_item.get("id")
                         stats_data = stats_item.get("data", stats_item)
 
-                        # Add the ID to the data for processing
+                        # Add the ID and data_updated_at to the data for processing
                         if stats_id:
                             stats_data["id"] = stats_id
+                            stats_data["data_updated_at"] = stats_item.get(
+                                "data_updated_at"
+                            )
                             if user.id is not None:
                                 await self._upsert_review_statistic(user.id, stats_data)
                             records_updated += 1
@@ -239,7 +279,8 @@ class SyncService:
                             # Log progress for large syncs
                             if (i + 1) % 500 == 0:
                                 logger.info(
-                                    f"Synced {i + 1}/{len(review_stats_data)} review statistics"
+                                    f"Synced {i + 1}/{len(review_stats_data)} "
+                                    f"review statistics"
                                 )
                     except Exception as e:
                         logger.error(f"Error syncing review stat {stats_id}: {e}")
@@ -307,7 +348,7 @@ class SyncService:
                 # Create new
                 subject = Subject(
                     id=subject_data["id"],
-                    object_type=subject_data["object"],
+                    object_type=subject_data["object_type"],
                     level=subject_data["level"],
                     slug=subject_data["slug"],
                     characters=subject_data.get("characters"),

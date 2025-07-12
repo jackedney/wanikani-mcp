@@ -2,6 +2,7 @@ version: '3'
 
 vars:
   UV_RUN: uv run
+  PYTHONPATH: "{{.TASKFILE_DIR}}/src"
 
 tasks:
   dev:
@@ -19,10 +20,6 @@ tasks:
   test:
     desc: Run tests
     cmd: "{{.UV_RUN}} pytest"
-
-  test-watch:
-    desc: Run tests in watch mode
-    cmd: "{{.UV_RUN}} pytest-watch"
 
   lint:
     desc: Run linter and formatter
@@ -48,7 +45,7 @@ tasks:
 
   install:
     desc: Install dependencies
-    cmd: uv install
+    cmd: uv sync
 
   clean:
     desc: Clean build artifacts
@@ -65,10 +62,22 @@ tasks:
       - task: type-check
       - task: test
 
-  mcp-stdio:
-    desc: Run MCP server in stdio mode
-    cmd: "{{.UV_RUN}} python -m wanikani_mcp.mcp_server"
+  mcp-connect:
+    desc: Connect to Claude Code MCP
+    cmd: 'claude mcp add-json wanikani "{\"command\": \"uv\", \"args\": [\"run\", \"python\", \"-m\", \"wanikani_mcp.server\"], \"env\": {}, \"cwd\": \"{{.PWD}}\"}"'
 
-  mcp-http:
-    desc: Run MCP server in HTTP mode
-    cmd: "{{.UV_RUN}} python -m wanikani_mcp.http_server"
+  mcp-verify:
+    desc: Verify MCP connection
+    cmd: claude mcp list | grep wanikani || echo "MCP not connected. Run 'task mcp-connect' first."
+
+  debug-db:
+    desc: Open database shell for debugging
+    env:
+      PYTHONPATH: "{{.TASKFILE_DIR}}/src"
+    cmd: "{{.UV_RUN}} python -c 'import sys; sys.path.insert(0, \"src\"); from wanikani_mcp.database import get_engine; from sqlmodel import Session, text; engine = get_engine(); session = Session(engine); print(\"Database connected. Use session.exec(text(\\\"SELECT ...\\\")) for queries\"); import IPython; IPython.embed()'"
+
+  debug-leeches:
+    desc: Debug leech detection query
+    env:
+      PYTHONPATH: "{{.TASKFILE_DIR}}/src"
+    cmd: "{{.UV_RUN}} python -c 'import sys; sys.path.insert(0, \"src\"); from wanikani_mcp.database import get_engine; from wanikani_mcp.models import *; from sqlmodel import Session, select, text; engine = get_engine(); session = Session(engine); print(\"Users:\", session.exec(select(User)).all()); print(\"ReviewStatistics count:\", session.exec(text(\"SELECT COUNT(*) FROM reviewstatistic\")).one()); print(\"Sample ReviewStatistics:\", session.exec(select(ReviewStatistic).limit(5)).all())'"
